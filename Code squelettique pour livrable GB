@@ -1,0 +1,159 @@
+
+# Cours : SED1515 - Conception de logiciels embarqués et écriture de scripts
+# Projet en binôme - Livrable B : Conception fonctionnelle initiale détaillée
+# Description :
+# Code squelettique définissant la structure d’appel des fonctions
+# principales du projet. Chaque fonction est définie avec :
+# - Les entrées et sorties prévues
+# - Les responsabilités des membres de l’équipe
+# - Une courte description du rôle de la fonction
+
+# === Importations nécessaires ===
+import math
+import csv
+
+# 1. Lecture et validation des données de calibration
+
+def lire_fichier_calibration(nom_fichier: str) -> dict:
+    """
+    Responsable : Binome
+    -----------------------------------------------------------
+    Entrée :
+        - nom_fichier : chemin du fichier CSV contenant les données de calibration
+    Sortie :
+        - dictionnaire contenant les valeurs d’erreur pour chaque servomoteur
+    Description :
+        Ouvre et lit le fichier de calibration, puis extrait les
+        erreurs de position pour chaque servo. Retourne un dictionnaire
+        associant les identifiants des servos à leurs corrections.
+    """
+    pass
+
+
+def valider_donnees_calibration(donnees: dict) -> bool:
+    """
+    Responsable : [Nom du binôme]
+    -----------------------------------------------------------
+    Entrée :
+        - donnees : dictionnaire de calibration lu depuis le fichier CSV
+    Sortie :
+        - booléen indiquant si les données sont valides
+    Description :
+        Vérifie que les données de calibration contiennent des valeurs
+        cohérentes (aucune valeur manquante ou incohérente).
+    """
+    pass
+
+
+# 2. Calcul de la cinématique inverse
+# ---------------------------------------------------------------
+def calculer_angles(x: float, y: float, longueur1: float, longueur2: float) -> tuple:
+    """
+    Responsable : Penina Godeme
+    -----------------------------------------------------------
+    Entrée :
+        - x, y : coordonnées de la position cible
+        - longueur1, longueur2 : longueurs des segments du bras
+    Sortie :
+        - tuple (theta_epaule, theta_coude)
+    Description :
+        Calcule les angles de l’épaule et du coude nécessaires
+        pour atteindre la position (x, y) à l’aide des équations
+        de cinématique inverse.
+    """
+    pass
+
+
+def appliquer_calibration(angles: tuple, erreurs: dict) -> tuple:
+    """
+    Responsable : [Nom du binôme]
+    -----------------------------------------------------------
+    Entrée :
+        - angles : tuple contenant les angles calculés
+        - erreurs : dictionnaire des erreurs de calibration
+    Sortie :
+        - tuple (angle_epaule_corrige, angle_coude_corrige)
+    Description :
+        Corrige les angles calculés en appliquant les erreurs
+        de calibration extraites du fichier CSV.
+    """
+    pass
+
+
+# ===============================================================
+# 3. Commande des servomoteurs
+# ---------------------------------------------------------------
+def envoyer_commandes_servos(angles_corriges: tuple):
+    """
+    Responsable : [Nom du binôme]
+    -----------------------------------------------------------
+    Entrée :
+        - angles_corriges : angles à envoyer aux servos
+    Sortie :
+        - aucune (effet matériel)
+    Description :
+        Envoie les commandes de position aux servomoteurs
+        via la communication série ou le microcontrôleur.
+    """
+    pass
+
+
+# ===============================================================
+# 4. Gestion des erreurs et journalisation
+# ---------------------------------------------------------------
+def journaliser_erreur(message: str):
+    """
+    Responsable : Binome
+    -----------------------------------------------------------
+    Entrée :
+        - message : texte décrivant l’erreur
+    Sortie :
+        - aucune
+    Description :
+        Écrit un message d’erreur dans un fichier de log pour
+        le suivi et le débogage des tests futurs.
+    """
+    pass
+
+
+# ===============================================================
+# 5. Fonction principale
+# ---------------------------------------------------------------
+def main():
+    """
+    Responsable : Tous ensemble
+    -----------------------------------------------------------
+    Description :
+        Point d’entrée du programme.
+        1. Lecture du fichier de calibration
+        2. Validation des données
+        3. Calcul des angles cibles
+        4. Application de la calibration
+        5. Envoi des commandes aux servos
+    """
+    try:
+        # Étape 1 : Lecture du fichier de calibration
+        calibration = lire_fichier_calibration("calibration.csv")
+
+        # Étape 2 : Validation
+        if not valider_donnees_calibration(calibration):
+            raise ValueError("Erreur de calibration détectée")
+
+        # Étape 3 : Calcul de la cinématique inverse
+        angles = calculer_angles(10.0, 15.0, 8.0, 7.0)
+
+        # Étape 4 : Application de la calibration
+        angles_corriges = appliquer_calibration(angles, calibration)
+
+        # Étape 5 : Commande des servomoteurs
+        envoyer_commandes_servos(angles_corriges)
+
+    except Exception as e:
+        journaliser_erreur(str(e))
+
+
+# ===============================================================
+# Point d’exécution du programme
+# ---------------------------------------------------------------
+if __name__ == "__main__":
+    main()
