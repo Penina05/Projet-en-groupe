@@ -85,7 +85,7 @@ def appliquer_calibration(angles: tuple, erreurs: dict) -> tuple:
 # ---------------------------------------------------------------
 def envoyer_commandes_servos(angles_corriges: tuple):
     """
-    Responsable : [Nom du binôme]
+    Responsable : [NIKE DJATENG]
     -----------------------------------------------------------
     Entrée :
         - angles_corriges : angles à envoyer aux servos
