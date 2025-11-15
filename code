@@ -1,0 +1,20 @@
+from datetime import datetime
+
+def journaliser_erreur(message: str):
+    """
+    Responsable : Tresor
+    -----------------------------------------------------------
+    Entrée :
+        - message : texte décrivant l’erreur
+    Sortie :
+        - aucune
+    Description :
+        Écrit un message d’erreur dans un fichier de log pour
+        le suivi et le débogage des tests futurs.
+    """
+    try:
+        horodatage = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        with open("log_erreurs.txt", "a", encoding="utf-8") as fichier_log:
+            fichier_log.write(f"[{horodatage}] ERREUR : {message}\n")
+    except Exception as e:
+        print(f"Échec de journalisation de l’erreur : {e}")
