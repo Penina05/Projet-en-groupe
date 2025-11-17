@@ -1,3 +1,4 @@
+#Premier bloc de code pour gérer la calibration-Mariam
 from machine import Pin, PWM
 from Traducteur_servo import traduit
 import time
