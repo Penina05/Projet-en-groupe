@@ -12,7 +12,7 @@
 #
 # Auteur : Penina Godeme
 # ============================================================
-
+from fonction_valeur_potentiometre import adc_to_mm
 import math
 
 # Longueurs du bras (mm) utilisées dans le LAB 8
@@ -91,4 +91,5 @@ def cinematics_inverse(x_user, y_user):
     servo_coude  = float(max(0, min(180, servo_coude)))
 
     return servo_epaule, servo_coude
+
 
