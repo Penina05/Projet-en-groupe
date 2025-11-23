@@ -22,11 +22,12 @@ class TestCinematicsInverse(unittest.TestCase):
     def test_unreachable_far(self):
         self.assertRaises(ValueError, cinematics_inverse, 500, 500)
 
-    #  TEST 4 : position trop proche 
+   # TEST 4 : position proche (correction : ce point est atteignable)
     def test_unreachable_near(self):
-        # position proche après offset : X = 50-50 = 0, Y = 0
-        # distance = 0 → impossible pour un bras de 100 + 100 mm
-        self.assertRaises(ValueError, cinematics_inverse, 50, 0)
+        epaule, coude = cinematics_inverse(50, 0)
+        self.assertTrue(0 <= epaule <= 180)
+        self.assertTrue(0 <= coude <= 180)
+        
     # TEST 5 : validité des angles 
     def test_angle_limits(self):
         epaule, coude = cinematics_inverse(200, 50)
@@ -60,3 +61,4 @@ class TestCinematicsInverse(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
+
