@@ -85,10 +85,10 @@ def cinematics_inverse(x_user, y_user):
     servo_epaule = 90 - alpha_deg
     servo_coude  = beta_deg - 90
 
-    # ---------------------------------------------
     # 6) Sécurisation des angles (0° → 180°)
-    # ---------------------------------------------
-    servo_epaule = max(0, min(180, servo_epaule))
-    servo_coude  = max(0, min(180, servo_coude))
+    #---------------------------------------------
+    servo_epaule = float(max(0, min(180, servo_epaule)))
+    servo_coude  = float(max(0, min(180, servo_coude)))
 
     return servo_epaule, servo_coude
+
