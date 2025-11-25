@@ -1,7 +1,5 @@
-# ============================================================
-# CINEMATIQUE INVERSE – VERSION FINALE (CONFORME AU LAB 8)
+# CINEMATIQUE INVERSE 
 # Projet SED1515 – Contrôle du Brachiographe
-#
 # Ce module effectue :
 # 1) La correction de la position réelle du bras (base à -50 mm)
 # 2) Le calcul des angles mathématiques alpha (épaule) et beta (coude)
@@ -9,9 +7,9 @@
 # 3) La conversion de ces angles en angles SERVOS, en tenant compte
 #    de l’orientation réelle des servomoteurs.
 # 4) La sécurisation des angles (entre 0° et 180°)
-#
+
 # Auteur : Penina Godeme
-# ============================================================
+
 from fonction_valeur_potentiometre import adc_to_mm
 import math
 
@@ -91,5 +89,6 @@ def cinematics_inverse(x_user, y_user):
     servo_coude  = float(max(0, min(180, servo_coude)))
 
     return servo_epaule, servo_coude
+
 
 
