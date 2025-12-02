@@ -1,178 +1,96 @@
-#Premier bloc de code pour gérer la calibration-Mariam Farota
-from machine import Pin, PWM
-from Traducteur_servo import traduit
-import time
+# MODULE DE CALIBRATION – VERSION FINALE
+# Ce module :
+#   1) Charge une table d’erreurs de calibration (épaule + coude)
+#   2) Interpole les corrections pour un angle donné
+#   3) Applique la correction aux angles provenant de la cinématique inverse
+#
+# Auteur : Mariam Farota
+# CHARGEMENT DE LA CALIBRATION
 
-# --- Initialisation des servos ---
-servo_epaule = PWM(Pin(0))
-servo_epaule.freq(50)
-
-servo_coude = PWM(Pin(1))
-servo_coude.freq(50)
-
-def move_servo(servo, angle):
-    servo.duty_u16(traduit(angle))
-    time.sleep(0.05)
-
-# --- Angles de départ ---
-angle_epaule = 90
-angle_coude = 90
-
-print("=== MODE CALIBRATION ===")
-print("Commandes :")
-print("  s+ / s- : epaule (+5° / -5°)")
-print("  e+ / e- : coude  (+5° / -5°)")
-print("  q       : quitter")
-print("----------------------------")
-
-move_servo(servo_epaule, angle_epaule)
-move_servo(servo_coude, angle_coude)
-
-# --- Boucle de calibration ---
-while True:
-    cmd = input("Commande : ").strip()
-
-    if cmd == "s+":
-        angle_epaule = min(angle_epaule + 5, 180)
-        move_servo(servo_epaule, angle_epaule)
-        print("Epaule =", angle_epaule)
-
-    elif cmd == "s-":
-        angle_epaule = max(angle_epaule - 5, 0)
-        move_servo(servo_epaule, angle_epaule)
-        print("Epaule =", angle_epaule)
-
-    elif cmd == "e+":
-        angle_coude = min(angle_coude + 5, 180)
-        move_servo(servo_coude, angle_coude)
-        print("Coude =", angle_coude)
-
-    elif cmd == "e-":
-        angle_coude = max(angle_coude - 5, 0)
-        move_servo(servo_coude, angle_coude)
-        print("Coude =", angle_coude)
-
-    elif cmd == "q":
-        print("\nCalibration terminée.")
-        print("Angles finaux :")
-        print("  epaule =", angle_epaule)
-        print("  coude  =", angle_coude)
-        break
-
-    else:
-        print("Commande invalide.")
-
-
-# Ce programme permet de :
-# 1) Calculer les angles de la cinematique inverse (epaule et coude)
-# 2) Lire un fichier de calibration contenant les erreurs des servos
-# 3) Appliquer les corrections avant d'envoyer les angles corriges
-
-import math
-
-# Fonction : CINEMATIQUE INVERSE
-def cinematics_inverse(x, y, L1=100, L2=100):
+def charger_calibration(fichier="calibration.txt"):
     """
-    Calcule les angles alpha (epaule) et beta (coude)
-    pour atteindre une position (x, y) donnee.
-    ##
-    Parametres :
-        x, y : coordonnees de la position du stylo (en mm)
-        L1, L2 : longueurs des deux segments du bras (en mm)
+    Charge un fichier de calibration contenant :
+        angle  erreur_epaule  erreur_coude
+
     Retour :
-        (alpha_deg, beta_deg) : angles en degres
+        {
+            "epaule": {angle: erreur},
+            "coude":  {angle: erreur}
+        }
+    Si le fichier n’existe pas → table simulée.
     """
-    cos_beta = (x**2 + y**2 - L1**2 - L2**2) / (2 * L1 * L2)
-    cos_beta = max(min(cos_beta, 1), -1)  # eviter les erreurs numeriques
-    
-    beta = math.acos(cos_beta)
-    alpha = math.atan2(y, x) - math.atan2(L2 * math.sin(beta), L1 + L2 * math.cos(beta))
-    
-    alpha_deg = math.degrees(alpha)
-    beta_deg = math.degrees(beta)
-    
-    return alpha_deg, beta_deg
 
-
-# Fonction : CHARGEMENT DE LA CALIBRATION
-def calibration_configuration(fichier):
-    """
-    Lit un fichier de calibration et retourne les erreurs
-    des deux servos sous forme de dictionnaire.
-    """
     erreurs_epaule = {}
     erreurs_coude = {}
-    
+
     try:
-        with open(fichier, 'r') as f:
+        with open(fichier, "r") as f:
             for ligne in f:
-                if ligne.startswith('#') or ligne.strip() == "":
+                if ligne.startswith("#") or ligne.strip() == "":
                     continue
                 angle, err_e, err_c = map(float, ligne.split())
                 erreurs_epaule[angle] = err_e
                 erreurs_coude[angle] = err_c
-                
-        print(f"Donnees de calibration chargees depuis {fichier}")
-    except FileNotFoundError:
-        print(f"Fichier {fichier} non trouve, utilisation de valeurs simulees.")
+        print("Calibration chargée :", fichier)
+    except:
+        # Table simulée si fichier absent
+        print("⚠️ Aucun fichier de calibration trouvé — table simulée utilisée.")
         for a in range(0, 181, 10):
-            erreurs_epaule[a] = max(0, 6 - 0.03 * a)
-            erreurs_coude[a] = max(0, 5 - 0.025 * a)
-    
+            erreurs_epaule[a] = 0.5 * (1 - a/180)
+            erreurs_coude[a] = 0.4 * (1 - a/180)
+
     return {"epaule": erreurs_epaule, "coude": erreurs_coude}
 
 
-# Fonction : INTERPOLATION DES ERREURS
+# ------------------------------------------------------------
+# INTERPOLATION LINÉAIRE
+# ------------------------------------------------------------
+
 def interpoler(angle, table):
-    """
-    Interpolation lineaire d'une erreur servo pour un angle donne.
-    """
+    """Retourne la correction correspondante à un angle donné."""
     angles = sorted(table.keys())
-    
+
+    # Avant la borne minimum
     if angle <= angles[0]:
         return table[angles[0]]
+
+    # Après la borne maximum
     if angle >= angles[-1]:
         return table[angles[-1]]
-    
-    for i in range(len(angles) - 1):
-        if angles[i] <= angle <= angles[i + 1]:
-            x0, x1 = angles[i], angles[i + 1]
-            y0, y1 = table[x0], table[x1]
-            return y0 + (y1 - y0) * (angle - x0) / (x1 - x0)
+
+    # Interpolation linéaire
+    for i in range(len(angles)-1):
+        a0, a1 = angles[i], angles[i+1]
+        if a0 <= angle <= a1:
+            e0, e1 = table[a0], table[a1]
+            # interpolation
+            return e0 + (e1 - e0) * (angle - a0) / (a1 - a0)
 
 
-# Fonction : ENVOYER LES ANGLES COMPENSES
-def envoyer_angles_compenses(angle_epaule, angle_coude, table_erreurs):
+# ------------------------------------------------------------
+# FONCTION PRINCIPALE : appliquer_calibration()
+# ------------------------------------------------------------
+
+def appliquer_calibration(angle_epaule, angle_coude, table_erreurs):
     """
-    Applique la correction d'erreur a chaque angle avant de les envoyer.
-    (Simulation d'envoi au servo)
+    Applique les corrections venant de la calibration.
+    
+    Entrées :
+        angle_epaule, angle_coude : angles en degrés venant de la cinématique inverse
+        table_erreurs : dictionnaire contenant les tables 'epaule' et 'coude'
+
+    Sortie :
+        (angle_epaule_corr, angle_coude_corr)
     """
-    erreur_epaule = interpoler(angle_epaule, table_erreurs["epaule"])
-    erreur_coude = interpoler(angle_coude, table_erreurs["coude"])
-    
-    angle_epaule_corrige = angle_epaule + erreur_epaule
-    angle_coude_corrige = angle_coude + erreur_coude
-    
-    print("\n--- Envoi des angles corriges ---")
-    print(f"Angle epaule demande : {angle_epaule:.2f}, corrige : {angle_epaule_corrige:.2f}")
-    print(f"Angle coude demande  : {angle_coude:.2f}, corrige : {angle_coude_corrige:.2f}")
-    
-    
-    return angle_epaule_corrige, angle_coude_corrige
 
+    err_e = interpoler(angle_epaule, table_erreurs["epaule"])
+    err_c = interpoler(angle_coude,  table_erreurs["coude"])
 
-# EXEMPLE D'UTILISATION (Simulation)
-if __name__ == "__main__":
-    # Position cible (x, y)
-    x, y = 120, 80
-    print(f"Position cible : x = {x} mm, y = {y} mm")
-    
-    # Etape 1 : Calculer les angles theoriques
-    alpha, beta = cinematics_inverse(x, y)
-    print(f"Angles calcules -> Epaule = {alpha:.2f}, Coude = {beta:.2f}")
-    
-    # Etape 2 : Charger ou simuler la table de calibration
-    table_erreurs = calibration_configuration("calibration_donnees_X.txt")
-    
-    # Etape 3 : Envoyer les angles corriges
-    envoyer_angles_compenses(alpha, beta, table_erreurs)
+    angle_epaule_corr = angle_epaule + err_e
+    angle_coude_corr  = angle_coude  + err_c
+
+    # sécurisation
+    angle_epaule_corr = max(0, min(180, angle_epaule_corr))
+    angle_coude_corr  = max(0, min(180, angle_coude_corr))
+
+    return angle_epaule_corr, angle_coude_corr
